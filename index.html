@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Repeat Booking Discovery Engine v1</title>
+<style>
+:root{--bg:#f6f5f1;--card:#fff;--ink:#1c1c1a;--mute:#6b6a65;--line:#e2e0d8;--acc:#1f4e79;--acc2:#b4541a;--ok:#2f6b3a}
+@media (prefers-color-scheme:dark){:root{--bg:#161614;--card:#201f1c;--ink:#ecebe6;--mute:#a09e96;--line:#34322d;--acc:#8ab4e0;--acc2:#e39a63;--ok:#8fc79a}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+main{max-width:1040px;margin:0 auto;padding:28px 18px 60px}
+h1{font-size:26px;margin:0 0 4px}h2{font-size:18px;margin:0 0 10px}p{margin:0 0 10px}.mute{color:var(--mute)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px;margin-top:16px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:14px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px}.stat b{display:block;font-size:22px}
+ol.steps{margin:0;padding-left:20px}ol.steps li{margin-bottom:6px}
+table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
+th{font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--mute)}td.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.bar{height:9px;border-radius:5px;background:var(--acc);min-width:2px}.bar.r{background:var(--acc2);margin-top:3px}
+tr.pick{cursor:pointer}tr.pick:hover td{background:rgba(127,127,127,.08)}
+.legend span{display:inline-block;margin-right:14px;font-size:13px}.dot{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px}
+.filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}select,textarea,button{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:7px 9px}
+button{background:var(--acc);color:#fff;border-color:var(--acc);cursor:pointer}@media (prefers-color-scheme:dark){button{color:#111}}
+textarea{width:100%;min-height:84px}
+.rev{border-top:1px solid var(--line);padding:10px 0}.rev:first-child{border-top:0}.tag{display:inline-block;font-size:12px;border:1px solid var(--line);border-radius:20px;padding:1px 8px;margin:4px 4px 0 0;color:var(--mute)}
+.tag.th{color:var(--acc);border-color:var(--acc)}.tag.x{color:var(--acc2);border-color:var(--acc2)}
+.wrap{overflow-x:auto}
+</style>
+</head>
+<body>
+<main>
+<h1>Repeat Booking Discovery Engine</h1>
+<p class="mute">Version 1. Why do Urban Company customers book again within 90 days, or not? Built on public Google Play reviews of the Urban Company app.</p>
+<div class="stats" id="stats"></div>
+
+<div class="card">
+<h2>How it works</h2>
+<ol class="steps">
+<li><b>Collect.</b> The newest public Play Store reviews of the Urban Company app, India, English.</li>
+<li><b>Keep the detailed ones.</b> Reviews under 12 words carry no reason, so they are counted for the star mix but not coded.</li>
+<li><b>Remove what the metric excludes.</b> Reviews about InstaHelp and Native hardware are tagged and dropped, because the 90-day repeat metric covers core services only.</li>
+<li><b>Tag service category and theme.</b> Each review can carry several themes. Rules are transparent and listed in the page source.</li>
+<li><b>Correct for negativity bias.</b> Unhappy customers write long reviews far more often. Each detailed review is reweighted so the star mix matches the star mix of all collected reviews.</li>
+<li><b>Compare.</b> Raw share shows what is loudest. Reweighted share shows what is likely common.</li>
+</ol>
+</div>
+
+<div class="card">
+<h2>Themes in core-service reviews</h2>
+<p class="legend"><span><i class="dot" style="background:var(--acc)"></i>Raw share of detailed reviews</span><span><i class="dot" style="background:var(--acc2)"></i>Reweighted for negativity bias</span></p>
+<div class="wrap"><table id="themes"><thead><tr><th>Theme</th><th>Reviews</th><th>Raw</th><th>Reweighted</th><th style="width:34%">Share</th></tr></thead><tbody></tbody></table></div>
+<p class="mute" style="margin-top:10px">Select a row to read the reviews behind it.</p>
+</div>
+
+<div class="card">
+<h2>Read the evidence</h2>
+<div class="filters">
+<select id="fTheme" aria-label="Theme"></select><select id="fCat" aria-label="Category"></select>
+<select id="fStar" aria-label="Stars"><option value="">Any rating</option><option value="low">1 to 2 stars</option><option value="mid">3 stars</option><option value="high">4 to 5 stars</option></select>
+<select id="fScope" aria-label="Scope"><option>Core service</option><option>InstaHelp (excluded)</option><option>Native product (excluded)</option></select>
+</div>
+<p class="mute" id="count"></p><div id="list"></div>
+</div>
+
+<div class="card">
+<h2>Try the classifier</h2>
+<p class="mute">Paste any review or complaint about a home service. The same rules used above run in your browser.</p>
+<textarea id="try" placeholder="Example: Booked an electrician for one switch. Paid the visiting charge and he said it needs a new board. Next time I will just call the society electrician."></textarea>
+<p style="margin-top:8px"><button id="go" type="button">Classify</button></p>
+<div id="tryOut"></div>
+</div>
+
+<div class="card">
+<h2>Known limits of version 1</h2>
+<ul>
+<li><b>Silent non-returners are missing.</b> Customers who were satisfied and simply never came back do not write reviews. A second source is needed for them.</li>
+<li><b>Rules, not a language model yet.</b> About half of core reviews match no theme. The next version adds model-based coding and reports agreement against a hand-labelled set.</li>
+<li><b>Reweighting only fixes review length bias.</b> People who review at all are still not typical customers.</li>
+<li><b>English only, one store, about three months.</b></li>
+</ul>
+</div>
+</main>
+<script src="rules.js"></script>
+<script>
+const $=id=>document.getElementById(id);const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+let DATA=[];
+function opt(sel,label,vals){sel.innerHTML='<option value="">'+label+'</option>'+vals.map(v=>'<option>'+esc(v)+'</option>').join('');}
+function renderThemes(){
+  const core=DATA.filter(r=>r.sc==="Core service");const W=core.reduce((a,r)=>a+r.w,0);
+  const rows=Object.keys(RULES.theme).map(k=>{const m=core.filter(r=>r.th.includes(k));return{k,n:m.length,raw:100*m.length/core.length,rw:100*m.reduce((a,r)=>a+r.w,0)/W};}).sort((a,b)=>b.rw-a.rw);
+  const none=core.filter(r=>!r.th.length).length;const max=Math.max(...rows.map(r=>Math.max(r.raw,r.rw)));
+  $("themes").querySelector("tbody").innerHTML=rows.map(r=>'<tr class="pick" data-k="'+esc(r.k)+'"><td>'+esc(r.k)+'</td><td class="n">'+r.n+'</td><td class="n">'+r.raw.toFixed(1)+'%</td><td class="n">'+r.rw.toFixed(1)+'%</td><td><div class="bar" style="width:'+(100*r.raw/max)+'%"></div><div class="bar r" style="width:'+(100*r.rw/max)+'%"></div></td></tr>').join('')+'<tr><td class="mute">No theme matched</td><td class="n">'+none+'</td><td class="n">'+(100*none/core.length).toFixed(1)+'%</td><td></td><td></td></tr>';
+  document.querySelectorAll("tr.pick").forEach(tr=>tr.onclick=()=>{$("fTheme").value=tr.dataset.k;$("fScope").value="Core service";renderList();$("list").scrollIntoView({behavior:"smooth",block:"start"});});
+}
+function renderList(){
+  const th=$("fTheme").value,c=$("fCat").value,s=$("fStar").value,sc=$("fScope").value;
+  const m=DATA.filter(r=>r.sc===sc&&(!th||r.th.includes(th))&&(!c||r.c.includes(c))&&(!s||(s==="low"?r.s<=2:s==="mid"?r.s===3:r.s>=4)));
+  $("count").textContent=m.length+" reviews match. Showing the first "+Math.min(40,m.length)+".";
+  $("list").innerHTML=m.slice(0,40).map(r=>'<div class="rev"><b>'+"★".repeat(r.s)+'</b> <span class="mute">'+r.d+' · '+r.id+'</span><div>'+esc(r.t)+(r.t.length>=320?"…":"")+'</div>'+r.c.map(x=>'<span class="tag">'+esc(x)+'</span>').join('')+r.th.map(x=>'<span class="tag th">'+esc(x)+'</span>').join('')+'</div>').join('');
+}
+$("go").onclick=()=>{const t=$("try").value.trim();if(!t){$("tryOut").innerHTML='<p class="mute">Paste some text first.</p>';return;}const c=classify(t);
+  $("tryOut").innerHTML='<p style="margin-top:10px"><span class="tag '+(c.scope==="Core service"?"":"x")+'">'+esc(c.scope)+'</span>'+(c.categories.length?c.categories.map(x=>'<span class="tag">'+esc(x)+'</span>').join(''):'<span class="tag">No category detected</span>')+(c.themes.length?c.themes.map(x=>'<span class="tag th">'+esc(x)+'</span>').join(''):'<span class="tag">No theme matched</span>')+'</p>';};
+fetch("data.json").then(r=>r.json()).then(d=>{DATA=d;
+  const core=d.filter(r=>r.sc==="Core service").length,ih=d.filter(r=>r.sc.startsWith("InstaHelp")).length,nat=d.filter(r=>r.sc.startsWith("Native")).length;const ds=d.map(r=>r.d).sort();
+  $("stats").innerHTML=[["6,000","reviews collected"],[d.length.toLocaleString(),"detailed reviews (12+ words)"],[core.toLocaleString(),"about core services"],[ih+nat,"excluded (InstaHelp, Native)"],[ds[0]+" to "+ds[ds.length-1],"date range"]].map(x=>'<div class="stat"><b style="font-size:'+(x[0].length>12?15:22)+'px">'+x[0]+'</b><span class="mute">'+x[1]+'</span></div>').join('');
+  opt($("fTheme"),"Any theme",Object.keys(RULES.theme));opt($("fCat"),"Any category",Object.keys(RULES.category));
+  ["fTheme","fCat","fStar","fScope"].forEach(i=>$(i).onchange=renderList);renderThemes();renderList();
+}).catch(()=>{$("stats").innerHTML='<div class="stat">Could not load the review data.</div>';});
+</script>
+</body>
+</html>
